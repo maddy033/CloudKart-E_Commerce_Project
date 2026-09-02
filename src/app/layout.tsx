@@ -8,7 +8,6 @@
  */
 
 import type { Metadata } from "next";
-import { Roboto } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -19,11 +18,6 @@ import MobileBottomMenu from "@/components/MobileBottomMenu";
 import { Toaster } from "@/components/ui/toaster";
 import ScrollToTopBtn from "@/components/ScrollToTopBtn";
 import { AuthProvider } from "@/components/providers/AuthProvider";
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["100", "300", "400", "500", "700", "900"],
-});
 
 export const metadata: Metadata = {
   title: "CloudKart - Your One-Stop Shopping Destination",
@@ -37,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={roboto.className}>
+      <body>
         <StoreProvider>
           <ThemeProvider
             attribute="class"
@@ -50,9 +44,11 @@ export default function RootLayout({
                 <header>
                   <Navbar />
                 </header>
+
                 <main className="flex-1">
                   {children}
                 </main>
+
                 <Footer />
                 <AddedCart />
                 <MobileBottomMenu />

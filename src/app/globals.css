@@ -1,9 +1,9 @@
-# Project: CloudKart
-# File: globals.css
-# Description: Project file.
-# How to use: Refer to the documentation.
-# Why it exists: Part of the CloudKart ecosystem.
-# When it's used: During various stages of the project lifecycle.
+/* # Project: CloudKart */
+/*# File: globals.css */
+/*# Description: Project file. */
+/*# How to use: Refer to the documentation. */ 
+/*# Why it exists: Part of the CloudKart ecosystem. */ 
+/*# When it's used: During various stages of the project lifecycle. */
 
 @tailwind base;
 @tailwind components;

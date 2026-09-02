@@ -1,18 +1,33 @@
-# Project: CloudKart
-# File: docker-compose.yml
-# Description: Docker Compose configuration for local multi-container development.
-# How to use: Run 'docker-compose up' to start the app and database.
-# Why it exists: To easily spin up the entire application stack locally.
-# When it's used: During local development.
-
-version: '3.8'
-
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: cloudkart-mongodb
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "27017:27017"
+      - "3001:3000"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/cloudkart
+      NEXT_PUBLIC_API_URL: http://app:3000/api
+    depends_on: 
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cloudkart-network
+
+  migration:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile.migration
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/cloudkart
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cloudkart-network
+
+  mongodb:
+    image: mongo:6-jammy
     volumes:
       - mongodb_data:/data/db
     healthcheck:
@@ -24,39 +39,10 @@ services:
     networks:
       - cloudkart-network
 
-  migration:
-    build:
-      context: .
-      dockerfile: scripts/Dockerfile.migration
-    container_name: cloudkart-migration
-    env_file:
-      - .env.local
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - cloudkart-network
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: cloudkart
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.local
-    depends_on:
-      migration:
-        condition: service_completed_successfully
-    networks:
-      - cloudkart-network
-    restart: unless-stopped
+volumes:
+  mongodb_data:
 
 networks:
   cloudkart-network:
-    name: cloudkart-network
 
-volumes:
-  mongodb_data:
-    name: mongodb_data
+  

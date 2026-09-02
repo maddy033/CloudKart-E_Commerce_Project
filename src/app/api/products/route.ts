@@ -1,12 +1,3 @@
-/**
- * Project: CloudKart
- * File: route.ts
- * Description: TypeScript source code file.
- * How to use: Part of the application logic.
- * Why it exists: To implement features or utility functions.
- * When it's used: During application execution.
- */
-
 import { NextResponse, NextRequest } from 'next/server';
 import dbConnect from '@/lib/db';
 import Product from '@/lib/models/product';
@@ -15,38 +6,60 @@ import { requireAuth } from '@/lib/auth/utils';
 export async function GET(request: NextRequest) {
   try {
     await dbConnect();
-    
+
     const { searchParams } = new URL(request.url);
     const query: any = {};
-    
-    // Search by title or description
-    if (searchParams.has('search')) {
-      const searchRegex = new RegExp(searchParams.get('search') as string, 'i');
+
+    // Search
+    const search = searchParams.get('search');
+
+    if (search && search.trim() !== '') {
+      const searchRegex = new RegExp(search, 'i');
+
       query.$or = [
         { title: searchRegex },
         { description: searchRegex }
       ];
     }
-    
-    // Filter by shop category
-    if (searchParams.has('shop_category')) {
-      query.shop_category = searchParams.get('shop_category');
-    }
-    
-    // Filter by categories
-    if (searchParams.has('categories')) {
-      const categories = searchParams.get('categories')?.split(',') || [];
-      query.categories = { $in: categories };
+
+    // Shop category
+    const shopCategory = searchParams.get('shop_category');
+
+    if (
+      shopCategory &&
+      shopCategory.trim() !== '' &&
+      shopCategory !== 'Select Shop'
+    ) {
+      query.shop_category = shopCategory;
     }
 
-    // Filter by price range
-    if (searchParams.has('minPrice') || searchParams.has('maxPrice')) {
+    // Categories
+    const categoryParam = searchParams.get('categories');
+
+    if (categoryParam && categoryParam.trim() !== '') {
+      const categories = categoryParam.split(',');
+
+      query.categories = {
+        $in: categories
+      };
+    }
+
+    // Price range
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+
+    if (
+      (minPrice && minPrice.trim() !== '') ||
+      (maxPrice && maxPrice.trim() !== '')
+    ) {
       query.price = {};
-      if (searchParams.has('minPrice')) {
-        query.price.$gte = parseFloat(searchParams.get('minPrice') as string);
+
+      if (minPrice && minPrice.trim() !== '') {
+        query.price.$gte = Number(minPrice);
       }
-      if (searchParams.has('maxPrice')) {
-        query.price.$lte = parseFloat(searchParams.get('maxPrice') as string);
+
+      if (maxPrice && maxPrice.trim() !== '') {
+        query.price.$lte = Number(maxPrice);
       }
     }
 
@@ -57,9 +70,17 @@ export async function GET(request: NextRequest) {
 
     // Sorting
     let sort: any = { createdAt: -1 };
-    if (searchParams.has('sort')) {
-      const [field, order] = (searchParams.get('sort') as string).split(':');
-      sort = { [field]: order === 'desc' ? -1 : 1 };
+
+    const sortParam = searchParams.get('sort');
+
+    if (sortParam && sortParam.trim() !== '') {
+      const [field, order] = sortParam.split(':');
+
+      if (field) {
+        sort = {
+          [field]: order === 'desc' ? -1 : 1
+        };
+      }
     }
 
     const products = await Product.find(query)
@@ -71,6 +92,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       products,
+      total,
       pagination: {
         total,
         page,
@@ -78,36 +100,13 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit)
       }
     });
+
   } catch (error) {
     console.error('Error fetching products:', error);
+
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const auth = await requireAuth(request);
-    if (auth.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
-    }
-
-    await dbConnect();
-
-    const body = await request.json();
-    const product = await Product.create(body);
-
-    return NextResponse.json(product, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating product:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
-      { status: error.message === 'Authentication required' ? 401 : 500 }
     );
   }
 }
