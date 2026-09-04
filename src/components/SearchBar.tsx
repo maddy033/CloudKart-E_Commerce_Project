@@ -13,9 +13,7 @@ import React, {
   Dispatch,
   SetStateAction,
   Suspense,
-  useEffect,
   useState,
-  useCallback,
 } from "react";
 import { Input } from "./ui/input";
 import {
@@ -27,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { IoSearch } from "react-icons/io5";
@@ -46,39 +44,40 @@ const SearchBarForm = ({
   useSelect,
 }: SearchBarProps) => {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedShop, setSelectedShop] = useState<undefined | string>(
-    undefined
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("q")?.toString() || ""
   );
+  const [selectedShop, setSelectedShop] = useState<string>("gadgets");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!searchValue) return;
+  const handleSelectShop = (shopSlug: string) => {
+    const slug = shopSlug.toLowerCase();
+    setSelectedShop(slug);
 
-    if (selectedShop === "Select Shop" || !selectedShop) {
-      return;
-    } else {
-      router.push(`/shops/${selectedShop}?q=${searchValue}`);
-      if (!setIsSearchOpen) return;
+    const query = searchValue.trim()
+      ? `?q=${encodeURIComponent(searchValue.trim())}`
+      : "";
+    router.push(`/shops/${slug}${query}`);
+
+    if (setIsSearchOpen) {
       setIsSearchOpen(false);
     }
   };
 
-  const handleSelectShop = useCallback((shop?: string) => {
-    if (shop) {
-      setSelectedShop(shop);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const targetShop = (selectedShop || "gadgets").toLowerCase();
+    const query = searchValue.trim()
+      ? `?q=${encodeURIComponent(searchValue.trim())}`
+      : "";
+
+    router.push(`/shops/${targetShop}${query}`);
+
+    if (setIsSearchOpen) {
+      setIsSearchOpen(false);
     }
-  }, []);
-
-  useEffect(() => {
-    handleSelectShop(selectedShop);
-  }, [selectedShop, handleSelectShop]);
-
-  useEffect(() => {
-    handleSelectShop(undefined);
-  }, [pathname, handleSelectShop]);
+  };
 
   return (
     <form
@@ -96,35 +95,40 @@ const SearchBarForm = ({
           <SelectContent>
             <SelectGroup>
               <SelectLabel className="text-muted-foreground">Shops</SelectLabel>
-              {shops.map((shop, index) => (
-                <SelectItem
-                  value={shop.title}
-                  key={index}
-                  className="px-4 [&>.indicator]:hidden capitalize"
-                >
-                  <div className="flex items-center">
-                    <Image
-                      src={shop.icon}
-                      width={40}
-                      height={40}
-                      alt={shop.title}
-                    />
+              {shops.map((shop: any, index: number) => {
+                const valueSlug = (
+                  shop.slug || shop.title
+                ).toLowerCase();
 
-                    <span>{shop.title}</span>
-                  </div>
-                </SelectItem>
-              ))}
+                return (
+                  <SelectItem
+                    value={valueSlug}
+                    key={index}
+                    className="px-4 [&>.indicator]:hidden capitalize cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={shop.icon}
+                        width={20}
+                        height={20}
+                        alt={shop.title}
+                      />
+                      <span>{shop.title}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectGroup>
           </SelectContent>
         </Select>
       )}
 
       <Input
-        placeholder="Search products"
+        placeholder="Search products..."
         className="border-none rounded-none"
         type="text"
+        value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
-        defaultValue={searchParams.get("q")?.toString()}
       />
 
       <Button className="text-xl" type="submit">

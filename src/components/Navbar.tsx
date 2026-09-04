@@ -25,8 +25,6 @@ import Modal from "./Modal";
 import { ProfileMenu } from "./ProfileMenu";
 import SearchBar from "./SearchBar";
 import { ToggleTheme } from "./ToggleTheme";
-import { LoginForm } from "./forms/LoginForm";
-import SignupForm from "./forms/SignupForm";
 import { Button } from "./ui/button";
 
 const links = [
@@ -38,14 +36,13 @@ const links = [
     title: "Contact",
     url: "/contact",
   },
-
   {
     title: "Offers",
     url: "/offers",
   },
   {
     title: "Pages",
-    url: "",
+    url: "#",
     subLinks: [
       {
         title: "Profile",
@@ -69,7 +66,6 @@ const links = [
 
 const Navbar = () => {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
   const [isConfirm, setIsConfirm] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -88,8 +84,7 @@ const Navbar = () => {
     };
 
     authentication();
-    return () => {};
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch]);
 
   const handleLogout = async () => {
     try {
@@ -119,10 +114,13 @@ const Navbar = () => {
               <div className="links hidden lg:block">
                 <ul className="flex gap-6 items-center">
                   {links.map((link) => (
-                    <li className="group relative" key={link.url}>
+                    <li className="group relative" key={link.title}>
                       <Link
                         href={link.url}
                         className="flex gap-1 items-center group-hover:text-primary transition-colors duration-300"
+                        onClick={(e) => {
+                          if (link.url === "#") e.preventDefault();
+                        }}
                       >
                         <span>{link.title}</span>
                         {link.subLinks && (
@@ -133,13 +131,13 @@ const Navbar = () => {
                       </Link>
                       {link.subLinks && (
                         <ul className="invisible scale-95 translate-y-2 opacity-0 absolute top-[130%] right-0 w-[160px] border bg-card rounded-lg transition-all duration-150 shadow-lg p-0.5 group-hover:visible group-hover:scale-100 group-hover:translate-y-0 group-hover:opacity-100">
-                          {link.subLinks.map((link) => (
-                            <li key={link.url}>
+                          {link.subLinks.map((subLink) => (
+                            <li key={subLink.url}>
                               <Link
                                 className="block px-3 py-2 hover:bg-accent rounded-lg"
-                                href={link.url}
+                                href={subLink.url}
                               >
-                                {link.title}
+                                {subLink.title}
                               </Link>
                             </li>
                           ))}
@@ -150,6 +148,7 @@ const Navbar = () => {
                 </ul>
               </div>
             </div>
+
             {/* mobile menu */}
             <button
               type="button"
